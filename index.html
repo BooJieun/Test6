@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>제주 주요 거점 거리 지도 (좌표 수정본)</title>
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            font-family: 'Malgun Gothic', sans-serif;
+        }
+        #map {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            bottom: 0;
+        }
+        .distance-info {
+            background: white;
+            padding: 12px;
+            border-radius: 6px;
+            box-shadow: 0 1px 5px rgba(0,0,0,0.4);
+            font-size: 13px;
+            line-height: 1.5;
+            min-width: 180px;
+        }
+        .distance-info h4 {
+            margin: 0 0 6px 0;
+            font-size: 14px;
+            color: #222;
+        }
+        .distance-label {
+            background: white;
+            border: 1px solid #333;
+            border-radius: 3px;
+            padding: 1px 4px;
+            font-weight: bold;
+            font-size: 11px;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="map"></div>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        window.onload = function() {
+            try {
+                // 1. 지도 초기화
+                const map = L.map('map').setView([33.485, 126.530], 12);
+
+                // 2. OpenStreetMap 레이어 추가
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    maxZoom: 19,
+                    attribution: '© OpenStreetMap'
+                }).addTo(map);
+
+                // 3. 주요 지점 정확한 좌표 수정 (중앙여고 학교 건물 위치로 정밀 조정)
+                const airport = [33.5113, 126.4930];      // 제주국제공항
+                const highschool = [33.4934, 126.5429];   // 제주중앙여고 (정확한 교사/운동장 위치)
+                const university = [33.4560, 126.5621];   // 제주대학교 (아라캠퍼스)
+
+                // 4. 마커 표시
+                L.marker(airport).addTo(map).bindPopup("<b>제주국제공항</b>");
+                L.marker(highschool).addTo(map).bindPopup("<b>제주중앙여자고등학교</b>").openPopup();
+                L.marker(university).addTo(map).bindPopup("<b>제주대학교</b>");
+
+                // 5. 거리 계산
+                const pA = L.latLng(airport);
+                const pH = L.latLng(highschool);
+                const pU = L.latLng(university);
+
+                const dAirToHigh = (pA.distanceTo(pH) / 1000).toFixed(2);
+                const dHighToUni = (pH.distanceTo(pU) / 1000).toFixed(2);
+                const dAirToUni = (pA.distanceTo(pU) / 1000).toFixed(2);
+
+                // 6. 직선 연결선 및 툴팁 표시
+                L.polyline([airport, highschool], {color: '#1e90ff', weight: 4}).addTo(map)
+                    .bindTooltip(dAirToHigh + " km", {permanent: true, direction: 'center', className: 'distance-label'});
+
+                L.polyline([highschool, university], {color: '#2ed573', weight: 4}).addTo(map)
+                    .bindTooltip(dHighToUni + " km", {permanent: true, direction: 'center', className: 'distance-label'});
+
+                L.polyline([airport, university], {color: '#ff4757', weight: 2, dashArray: '5, 5'}).addTo(map)
+                    .bindTooltip(dAirToUni + " km", {permanent: true, direction: 'center', className: 'distance-label'});
+
+                // 7. 안내창 정보 상자 추가
+                const info = L.control({position: 'topright'});
+                info.onAdd = function (map) {
+                    const div = L.DomUtil.create('div', 'distance-info');
+                    div.innerHTML = "<h4>📍 직선거리 (수정본)</h4>" +
+                                    "🔵 공항-중앙여고: <b>" + dAirToHigh + " km</b><br>" +
+                                    "🟢 중앙여고-제주대: <b>" + dHighToUni + " km</b><br>" +
+                                    "🔴 공항-제주대: <b>" + dAirToUni + " km</b>";
+                    return div;
+                };
+                info.addTo(map);
+
+            } catch (e) {
+                console.error(e);
+            }
+        };
+    </script>
+</body>
+</html>
